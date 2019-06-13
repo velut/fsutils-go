@@ -6,15 +6,29 @@
 trigger:
 - master
 
+strategy:
+  matrix:
+    linux:
+      imageName: ubuntu-latest
+      gorootDir: /usr/local
+    mac:
+      imageName: macos-latest
+      gorootDir: /usr/local
+    windows:
+      imageName: windows-latest
+      gorootDir: C:\
+  maxParallel: 3
+
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: $(imageName)
 
 variables:
-  GOBIN:  '$(GOPATH)/bin' # Go binaries path
-  GOROOT: '/usr/local/go1.11' # Go installation path
+  GOROOT: '$(gorootDir)/go' # Go installation path
   GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
-  GO111MODULE: 'on'
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
   modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+  GOVERSION: 1.12
+  GO111MODULE: 'on'
 
 steps:
 - script: |
@@ -28,13 +42,16 @@ steps:
     echo '##vso[task.prependpath]$(GOROOT)/bin'
   displayName: 'Set up the Go workspace'
 
+- task: GoTool@0
+  inputs:
+    version: $(GOVERSION)
+  displayName: 'Install Go $(GOVERSION)'
+
 - script: |
-    go version
-    go get -v -t -d ./...
-    if [ -f Gopkg.toml ]; then
-        curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        dep ensure
-    fi
-    go build -v .
+    go get github.com/magefile/mage
+  displayName: 'Install Mage'
+
+- script: |
+    mage -v test
   workingDirectory: '$(modulePath)'
-  displayName: 'Get dependencies, then build'
+  displayName: 'Run tests'
