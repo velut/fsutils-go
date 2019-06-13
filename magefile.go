@@ -17,6 +17,22 @@ func Test() error {
 	return sh.Run("go", "test", "-v", "-race", "./fs")
 }
 
+// Lint lints the fs library.
+func Lint() error {
+	mg.Deps(InstallDeps)
+
+	fmt.Println("Linting...")
+	return sh.Run("golangci-lint", "run", "./fs")
+}
+
+// LintAll lints the fs library using all linters.
+func LintAll() error {
+	mg.Deps(InstallDeps)
+
+	fmt.Println("Linting...")
+	return sh.Run("golangci-lint", "run", "--enable-all" "./fs")
+}
+
 // InstallDeps installs the dependencies.
 func InstallDeps() error {
 	fmt.Println("Installing Deps...")
