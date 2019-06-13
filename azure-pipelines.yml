@@ -61,7 +61,6 @@ steps:
     go get github.com/jstemmer/go-junit-report
     go get github.com/axw/gocov/gocov
     go get github.com/AlekSi/gocov-xml
-    go get gopkg.in/matm/v1/gocov-html
   displayName: 'Install testing tools'
 
 - bash: |
@@ -75,11 +74,11 @@ steps:
   displayName: 'Run tests'
 
 - bash: |
-    go test -v -coverprofile=coverage.txt -covermode count ./fs 2>&1 | go-junit-report > report.xml
-    gocov convert coverage.txt > coverage.json
+    go test -v -coverprofile=c.out -covermode count ./fs 2>&1 | go-junit-report > report.xml
+    gocov convert c.out > coverage.json
     gocov-xml < coverage.json > coverage.xml
     mkdir coverage
-    gocov-html < coverage.json > coverage/index.html
+    go tool cover -html=c.out -o coverage/index.html
   workingDirectory: '$(modulePath)'
   displayName: 'Generate coverage report'
 
