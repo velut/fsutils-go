@@ -58,11 +58,20 @@ steps:
 
 - bash: |
     go get github.com/magefile/mage
-    go get github.com/golangci/golangci-lint/cmd/golangci-lint
     go get github.com/jstemmer/go-junit-report
     go get github.com/axw/gocov/gocov
     go get github.com/AlekSi/gocov-xml
+    curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.17.1
   displayName: 'Install testing tools'
+
+- bash: |
+    printf "Mage location: $(which mage)\n"
+    printf "Mage version:\n"
+    printf mage -version
+    printf "\n\nGolangci-lint location: $(which golangci-lint)\n\n"
+    printf "Golangci-lint version:\n"
+    printf golangci-lint --version
+  displayName: Print tools info
 
 - bash: |
     mage -v lintall
