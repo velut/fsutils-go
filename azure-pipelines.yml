@@ -31,7 +31,7 @@ variables:
   GO111MODULE: 'on'
 
 steps:
-- script: |
+- bash: |
     mkdir -p '$(GOBIN)'
     mkdir -p '$(GOPATH)/pkg'
     mkdir -p '$(modulePath)'
@@ -47,11 +47,20 @@ steps:
     version: $(GOVERSION)
   displayName: 'Install Go $(GOVERSION)'
 
-- script: |
+- bash: |
+    printf "Go location: $(which go)\n"
+    printf "Go version: $(go version)\n"
+    printf "\n\nGo environment:\n\n"
+    go env
+    printf "\n\nSystem environment:\n\n"
+    env
+  displayName: Print environment info
+
+- bash: |
     go get github.com/magefile/mage
   displayName: 'Install Mage'
 
-- script: |
+- bash: |
     mage -v test
   workingDirectory: '$(modulePath)'
   displayName: 'Run tests'
