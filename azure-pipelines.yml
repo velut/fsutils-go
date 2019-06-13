@@ -58,9 +58,40 @@ steps:
 
 - bash: |
     go get github.com/magefile/mage
-  displayName: 'Install Mage'
+    go get github.com/jstemmer/go-junit-report
+    go get github.com/axw/gocov/gocov
+    go get github.com/AlekSi/gocov-xml
+    go get gopkg.in/matm/v1/gocov-html
+  displayName: 'Install testing tools'
+
+- bash: |
+    mage -v lintall
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run linters'
 
 - bash: |
     mage -v test
   workingDirectory: '$(modulePath)'
   displayName: 'Run tests'
+
+- bash: |
+    go test -v -coverprofile=coverage.txt -covermode count ./fs 2>&1 | go-junit-report > report.xml
+    gocov convert coverage.txt > coverage.json
+    gocov-xml < coverage.json > coverage.xml
+    mkdir coverage
+    gocov-html < coverage.json > coverage/index.html
+  workingDirectory: '$(modulePath)'
+  displayName: 'Generate coverage report'
+
+- task: PublishTestResults@2
+  inputs:
+    testRunner: JUnit
+    testResultsFiles: $(System.DefaultWorkingDirectory)/**/report.xml
+  displayName: 'Publish test results'
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: Cobertura 
+    summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverage.xml
+    reportDirectory: $(System.DefaultWorkingDirectory)/**/coverage
+  displayName: 'Publish coverage results'
