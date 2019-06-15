@@ -380,3 +380,180 @@ func rootParent(dirname string) string {
 		nextParent = filepath.Dir(nextParent)
 	}
 }
+
+func TestReadDir(t *testing.T) {
+	assert := assert.New(t)
+
+	dir1, err := ioutil.TempDir("", "dir")
+	assert.Nil(err)
+	defer os.RemoveAll(dir1)
+
+	file1, err := ioutil.TempFile("", "file")
+	assert.Nil(err)
+	file1.Close()
+	defer os.Remove(file1.Name())
+
+	wd, err := os.Getwd()
+	assert.Nil(err)
+	testdir := filepath.Join(filepath.Dir(wd), "testdata", "read_dir_test")
+
+	type args struct {
+		dirname string
+		options *ReadDirOptions
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []*FileInfo
+		wantErr bool
+	}{
+		{
+			"invalid options",
+			args{
+				dir1,
+				nil,
+			},
+			nil,
+			true,
+		},
+		{
+			"invalid dir",
+			args{
+				"",
+				&ReadDirOptions{},
+			},
+			nil,
+			true,
+		},
+		{
+			"file is not a dir",
+			args{
+				file1.Name(),
+				&ReadDirOptions{},
+			},
+			nil,
+			true,
+		},
+		{
+			"empty dir, exclude subdirs",
+			args{
+				dir1,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+				},
+			},
+			[]*FileInfo{},
+			false,
+		},
+		{
+			"empty dir, include subdirs",
+			args{
+				dir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+				},
+			},
+			[]*FileInfo{},
+			false,
+		},
+		{
+			"non-empty dir, exclude subdirs",
+			args{
+				testdir,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+				},
+			},
+			[]*FileInfo{
+				{
+					Name: "10.txt",
+					Ext:  ".txt",
+					Dir:  testdir,
+					Path: filepath.Join(testdir, "10.txt"),
+					Size: 13,
+				},
+				{
+					Name: "20.txt",
+					Ext:  ".txt",
+					Dir:  testdir,
+					Path: filepath.Join(testdir, "20.txt"),
+					Size: 13,
+				},
+			},
+			false,
+		},
+		{
+			"non-empty dir, include subdirs",
+			args{
+				testdir,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+				},
+			},
+			[]*FileInfo{
+				{
+					Name: "10.txt",
+					Ext:  ".txt",
+					Dir:  testdir,
+					Path: filepath.Join(testdir, "10.txt"),
+					Size: 13,
+				},
+				{
+					Name: "20.txt",
+					Ext:  ".txt",
+					Dir:  testdir,
+					Path: filepath.Join(testdir, "20.txt"),
+					Size: 13,
+				},
+				{
+					Name: "30.txt",
+					Ext:  ".txt",
+					Dir:  filepath.Join(testdir, "dir1"),
+					Path: filepath.Join(testdir, "dir1", "30.txt"),
+					Size: 13,
+				},
+				{
+					Name: "40.txt",
+					Ext:  ".txt",
+					Dir:  filepath.Join(testdir, "dir1"),
+					Path: filepath.Join(testdir, "dir1", "40.txt"),
+					Size: 13,
+				},
+				{
+					Name: "50.txt",
+					Ext:  ".txt",
+					Dir:  filepath.Join(testdir, "dir1", "subdir1"),
+					Path: filepath.Join(testdir, "dir1", "subdir1", "50.txt"),
+					Size: 13,
+				},
+				{
+					Name: "60.txt",
+					Ext:  ".txt",
+					Dir:  filepath.Join(testdir, "dir1", "subdir1"),
+					Path: filepath.Join(testdir, "dir1", "subdir1", "60.txt"),
+					Size: 13,
+				},
+				{
+					Name: "70.txt",
+					Ext:  ".txt",
+					Dir:  filepath.Join(testdir, "dir2"),
+					Path: filepath.Join(testdir, "dir2", "70.txt"),
+					Size: 13,
+				},
+				{
+					Name: "80.txt",
+					Ext:  ".txt",
+					Dir:  filepath.Join(testdir, "dir2"),
+					Path: filepath.Join(testdir, "dir2", "80.txt"),
+					Size: 13,
+				},
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		got, gotErr := ReadDir(tt.args.dirname, tt.args.options)
+		assert.Equal(tt.wantErr, gotErr != nil, tt.name)
+		assert.Equal(tt.want, got, tt.name)
+	}
+}

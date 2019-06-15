@@ -1,10 +1,68 @@
 package fs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+
+	"github.com/karrick/godirwalk"
 )
+
+// ReadDirOptions represents the options available for reading a directory.
+type ReadDirOptions struct {
+	IncludeSubdirs bool // if true, include subdirectories
+}
+
+// ReadDir reads the directory named by the given dirname
+// following the given options and returns a list of FileInfo instances,
+// sorted by lexical path order, representing the regular files found.
+func ReadDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
+	if options == nil {
+		return nil, errors.New("no options specified")
+	}
+
+	if err := AssertDir(dirname); err != nil {
+		return nil, err
+	}
+
+	return readDir(dirname, options)
+}
+
+func readDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
+	dirname = filepath.Clean(dirname)
+	skipSubdirs := !options.IncludeSubdirs
+
+	fileInfos := []*FileInfo{}
+	_ = godirwalk.Walk(dirname, &godirwalk.Options{
+		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			skipDir := skipSubdirs && de.IsDir() && osPathname != dirname
+			if skipDir {
+				return filepath.SkipDir
+			}
+
+			if de.IsRegular() {
+				fi, _ := ReadFileInfo(osPathname)
+				if fi != nil {
+					fileInfos = append(fileInfos, fi)
+				}
+			}
+
+			return nil
+		},
+		ErrorCallback: func(_ string, _ error) godirwalk.ErrorAction {
+			return godirwalk.SkipNode
+		},
+		Unsorted: true,
+	})
+
+	sort.Slice(fileInfos, func(i, j int) bool {
+		return fileInfos[i].Path < fileInfos[j].Path
+	})
+
+	return fileInfos, nil
+}
 
 // SubdirOf returns true if the given dirname is a subdirectory
 // of the given target directory.
