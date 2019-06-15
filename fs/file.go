@@ -174,9 +174,7 @@ func copyFile(filename, destFilename string) error {
 	}
 
 	if _, err := io.Copy(destFile, srcFile); err != nil {
-		if err1 := destFile.Close(); err1 != nil {
-			return err1
-		}
+		_ = destFile.Close()
 		return err
 	}
 
