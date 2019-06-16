@@ -5,19 +5,25 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/karrick/godirwalk"
 )
 
 // ReadDirOptions represents the options available for reading a directory.
 type ReadDirOptions struct {
-	IncludeSubdirs bool // if true, include subdirectories
+	// IncludeSubdirs, if true, specifies that subdirectories,
+	// at any nesting level, should also be read.
+	IncludeSubdirs bool
+
+	// MaxFiles specifies the maximum number of files to read.
+	// If MaxFiles is 0, all files are read.
+	MaxFiles int
 }
 
 // ReadDir reads the directory named by the given dirname
 // following the given options and returns a list of FileInfo instances,
 // sorted by lexical path order, representing the regular files found.
+// Eventual filesystem errors are ignored.
 func ReadDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 	if options == nil {
 		return nil, errors.New("no options specified")
@@ -33,6 +39,8 @@ func ReadDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 func readDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 	dirname = filepath.Clean(dirname)
 	skipSubdirs := !options.IncludeSubdirs
+	maxFiles := options.MaxFiles
+	limitFiles := maxFiles > 0
 
 	fileInfos := []*FileInfo{}
 	_ = godirwalk.Walk(dirname, &godirwalk.Options{
@@ -49,16 +57,20 @@ func readDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 				}
 			}
 
+			halt := limitFiles && len(fileInfos) >= maxFiles
+			if halt {
+				return HaltErr
+			}
+
 			return nil
 		},
-		ErrorCallback: func(_ string, _ error) godirwalk.ErrorAction {
+		ErrorCallback: func(_ string, err error) godirwalk.ErrorAction {
+			if err.Error() == HaltErr.Error() {
+				return godirwalk.Halt
+			}
+
 			return godirwalk.SkipNode
 		},
-		Unsorted: true,
-	})
-
-	sort.Slice(fileInfos, func(i, j int) bool {
-		return fileInfos[i].Path < fileInfos[j].Path
 	})
 
 	return fileInfos, nil

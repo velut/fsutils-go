@@ -393,9 +393,76 @@ func TestReadDir(t *testing.T) {
 	file1.Close()
 	defer os.Remove(file1.Name())
 
+	dir2, err := ioutil.TempDir("", "dir")
+	assert.Nil(err)
+	dir3, err := ioutil.TempDir(dir2, "dir")
+	assert.Nil(err)
+	file3, err := ioutil.TempFile(dir3, "file")
+	assert.Nil(err)
+	file3.Close()
+	defer os.RemoveAll(dir2)
+
 	wd, err := os.Getwd()
 	assert.Nil(err)
-	testdir := filepath.Join(filepath.Dir(wd), "testdata", "read_dir_test")
+	testdir1 := filepath.Join(filepath.Dir(wd), "testdata", "read_dir_test")
+	testdir1Contents := []*FileInfo{
+		{
+			Name: "10.gif",
+			Ext:  ".gif",
+			Dir:  testdir1,
+			Path: filepath.Join(testdir1, "10.gif"),
+			Size: 799,
+		},
+		{
+			Name: "20.gif",
+			Ext:  ".gif",
+			Dir:  testdir1,
+			Path: filepath.Join(testdir1, "20.gif"),
+			Size: 799,
+		},
+		{
+			Name: "30.gif",
+			Ext:  ".gif",
+			Dir:  filepath.Join(testdir1, "dir1"),
+			Path: filepath.Join(testdir1, "dir1", "30.gif"),
+			Size: 799,
+		},
+		{
+			Name: "40.gif",
+			Ext:  ".gif",
+			Dir:  filepath.Join(testdir1, "dir1"),
+			Path: filepath.Join(testdir1, "dir1", "40.gif"),
+			Size: 799,
+		},
+		{
+			Name: "50.gif",
+			Ext:  ".gif",
+			Dir:  filepath.Join(testdir1, "dir1", "subdir1"),
+			Path: filepath.Join(testdir1, "dir1", "subdir1", "50.gif"),
+			Size: 799,
+		},
+		{
+			Name: "60.gif",
+			Ext:  ".gif",
+			Dir:  filepath.Join(testdir1, "dir1", "subdir1"),
+			Path: filepath.Join(testdir1, "dir1", "subdir1", "60.gif"),
+			Size: 799,
+		},
+		{
+			Name: "70.gif",
+			Ext:  ".gif",
+			Dir:  filepath.Join(testdir1, "dir2"),
+			Path: filepath.Join(testdir1, "dir2", "70.gif"),
+			Size: 799,
+		},
+		{
+			Name: "80.gif",
+			Ext:  ".gif",
+			Dir:  filepath.Join(testdir1, "dir2"),
+			Path: filepath.Join(testdir1, "dir2", "80.gif"),
+			Size: 799,
+		},
+	}
 
 	type args struct {
 		dirname string
@@ -457,97 +524,275 @@ func TestReadDir(t *testing.T) {
 			false,
 		},
 		{
-			"non-empty dir, exclude subdirs",
+			"empty dir, include subdirs, limit 100 files",
 			args{
-				testdir,
+				dir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       100,
+				},
+			},
+			[]*FileInfo{},
+			false,
+		},
+		{
+			"empty dir, non-empty subdirs, exclude subdirs",
+			args{
+				dir2,
 				&ReadDirOptions{
 					IncludeSubdirs: false,
 				},
 			},
-			[]*FileInfo{
-				{
-					Name: "10.gif",
-					Ext:  ".gif",
-					Dir:  testdir,
-					Path: filepath.Join(testdir, "10.gif"),
-					Size: 799,
-				},
-				{
-					Name: "20.gif",
-					Ext:  ".gif",
-					Dir:  testdir,
-					Path: filepath.Join(testdir, "20.gif"),
-					Size: 799,
-				},
-			},
+			[]*FileInfo{},
 			false,
 		},
 		{
-			"non-empty dir, include subdirs",
+			"empty dir, non-empty subdirs, include subdirs",
 			args{
-				testdir,
+				dir2,
 				&ReadDirOptions{
 					IncludeSubdirs: true,
 				},
 			},
 			[]*FileInfo{
 				{
-					Name: "10.gif",
-					Ext:  ".gif",
-					Dir:  testdir,
-					Path: filepath.Join(testdir, "10.gif"),
-					Size: 799,
-				},
-				{
-					Name: "20.gif",
-					Ext:  ".gif",
-					Dir:  testdir,
-					Path: filepath.Join(testdir, "20.gif"),
-					Size: 799,
-				},
-				{
-					Name: "30.gif",
-					Ext:  ".gif",
-					Dir:  filepath.Join(testdir, "dir1"),
-					Path: filepath.Join(testdir, "dir1", "30.gif"),
-					Size: 799,
-				},
-				{
-					Name: "40.gif",
-					Ext:  ".gif",
-					Dir:  filepath.Join(testdir, "dir1"),
-					Path: filepath.Join(testdir, "dir1", "40.gif"),
-					Size: 799,
-				},
-				{
-					Name: "50.gif",
-					Ext:  ".gif",
-					Dir:  filepath.Join(testdir, "dir1", "subdir1"),
-					Path: filepath.Join(testdir, "dir1", "subdir1", "50.gif"),
-					Size: 799,
-				},
-				{
-					Name: "60.gif",
-					Ext:  ".gif",
-					Dir:  filepath.Join(testdir, "dir1", "subdir1"),
-					Path: filepath.Join(testdir, "dir1", "subdir1", "60.gif"),
-					Size: 799,
-				},
-				{
-					Name: "70.gif",
-					Ext:  ".gif",
-					Dir:  filepath.Join(testdir, "dir2"),
-					Path: filepath.Join(testdir, "dir2", "70.gif"),
-					Size: 799,
-				},
-				{
-					Name: "80.gif",
-					Ext:  ".gif",
-					Dir:  filepath.Join(testdir, "dir2"),
-					Path: filepath.Join(testdir, "dir2", "80.gif"),
-					Size: 799,
+					Name: filepath.Base(file3.Name()),
+					Ext:  filepath.Ext(file3.Name()),
+					Dir:  dir3,
+					Path: file3.Name(),
+					Size: 0,
 				},
 			},
+			false,
+		},
+		{
+			"empty dir, non-empty subdirs, exclude subdirs, limit 1 file",
+			args{
+				dir2,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+					MaxFiles:       1,
+				},
+			},
+			[]*FileInfo{},
+			false,
+		},
+		{
+			"empty dir, non-empty subdirs, include subdirs, limit 1 file",
+			args{
+				dir2,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       1,
+				},
+			},
+			[]*FileInfo{
+				{
+					Name: filepath.Base(file3.Name()),
+					Ext:  filepath.Ext(file3.Name()),
+					Dir:  dir3,
+					Path: file3.Name(),
+					Size: 0,
+				},
+			},
+			false,
+		},
+		{
+			"empty dir, non-empty subdirs, exclude subdirs, limit 100 files",
+			args{
+				dir2,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+					MaxFiles:       100,
+				},
+			},
+			[]*FileInfo{},
+			false,
+		},
+		{
+			"empty dir, non-empty subdirs, include subdirs, limit 100 files",
+			args{
+				dir2,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       100,
+				},
+			},
+			[]*FileInfo{
+				{
+					Name: filepath.Base(file3.Name()),
+					Ext:  filepath.Ext(file3.Name()),
+					Dir:  dir3,
+					Path: file3.Name(),
+					Size: 0,
+				},
+			},
+			false,
+		},
+		{
+			"non-empty dir, exclude subdirs",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+				},
+			},
+			testdir1Contents[:2],
+			false,
+		},
+		{
+			"non-empty dir, exclude subdirs, limit 1 file",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+					MaxFiles:       1,
+				},
+			},
+			testdir1Contents[:1],
+			false,
+		},
+		{
+			"non-empty dir, exclude subdirs, limit 2 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+					MaxFiles:       2,
+				},
+			},
+			testdir1Contents[:2],
+			false,
+		},
+		{
+			"non-empty dir, exclude subdirs, limit 100 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: false,
+					MaxFiles:       100,
+				},
+			},
+			testdir1Contents[:2],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+				},
+			},
+			testdir1Contents,
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 1 file",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       1,
+				},
+			},
+			testdir1Contents[:1],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 2 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       2,
+				},
+			},
+			testdir1Contents[:2],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 3 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       3,
+				},
+			},
+			testdir1Contents[:3],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 4 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       4,
+				},
+			},
+			testdir1Contents[:4],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 5 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       5,
+				},
+			},
+			testdir1Contents[:5],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 6 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       6,
+				},
+			},
+			testdir1Contents[:6],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 7 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       7,
+				},
+			},
+			testdir1Contents[:7],
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 8 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       8,
+				},
+			},
+			testdir1Contents,
+			false,
+		},
+		{
+			"non-empty dir, include subdirs, limit 100 files",
+			args{
+				testdir1,
+				&ReadDirOptions{
+					IncludeSubdirs: true,
+					MaxFiles:       100,
+				},
+			},
+			testdir1Contents,
 			false,
 		},
 	}
