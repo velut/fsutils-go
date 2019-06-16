@@ -29,6 +29,11 @@ func LintAll() error {
 	return sh.Run("golangci-lint", "run", "--enable-all", "-D", "goimports", "-D", "gofmt", "./fs")
 }
 
+func PreCommit() error {
+	mg.Deps(Test)
+	return sh.Run("golangci-lint", "run", "--enable-all", "--fix", "./fs")
+}
+
 // InstallDeps installs the dependencies.
 func InstallDeps() error {
 	fmt.Println("Installing Deps...")
