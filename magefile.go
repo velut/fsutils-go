@@ -26,7 +26,7 @@ func Lint() error {
 // LintAll lints the fs library using all linters.
 func LintAll() error {
 	fmt.Println("Linting...")
-	return sh.Run("golangci-lint", "run", "--enable-all", "./fs")
+	return sh.Run("golangci-lint", "run", "--enable-all", "--fix", "./fs")
 }
 
 func PreCommit() error {
