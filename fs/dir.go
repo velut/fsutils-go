@@ -65,7 +65,7 @@ func readDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 			return nil
 		},
 		ErrorCallback: func(_ string, err error) godirwalk.ErrorAction {
-			if err.Error() == HaltErr.Error() {
+			if err == HaltErr {
 				return godirwalk.Halt
 			}
 
