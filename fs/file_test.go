@@ -874,3 +874,43 @@ func Test_copyFile(t *testing.T) {
 		assert.Equal(tt.wantErr, gotErr != nil, tt.name)
 	}
 }
+
+func Test_moveFile(t *testing.T) {
+	assert := assert.New(t)
+
+	file1, err := ioutil.TempFile("", "file")
+	assert.Nil(err)
+	file1.Close()
+	defer os.Remove(file1.Name())
+
+	type args struct {
+		filename     string
+		destFilename string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"invalid filename",
+			args{
+				"",
+				file1.Name(),
+			},
+			true,
+		},
+		{
+			"invalid destFilename",
+			args{
+				file1.Name(),
+				"",
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		gotErr := moveFile(tt.args.filename, tt.args.destFilename)
+		assert.Equal(tt.wantErr, gotErr != nil, tt.name)
+	}
+}

@@ -25,12 +25,20 @@ type FileInfo struct {
 // trying other destinations in incrementing order, up to maxTries times.
 // MoveFileSafe returns the destination to which the file is moved.
 func MoveFileSafe(filename, destFilename string, maxTries int) (string, error) {
-	destFilename, err := CopyFileSafe(filename, destFilename, maxTries)
+	if err := assertCopyable(filename, destFilename); err != nil {
+		return "", err
+	}
+
+	nextFilename, err := nextFilename(destFilename, maxTries)
 	if err != nil {
 		return "", err
 	}
-	_ = RemoveFile(filename)
-	return destFilename, nil
+
+	if err := moveFile(filename, nextFilename); err != nil {
+		return "", err
+	}
+
+	return nextFilename, nil
 }
 
 // CopyFileSafe copies the file with the given filename to the given destination.
@@ -42,20 +50,28 @@ func CopyFileSafe(filename, destFilename string, maxTries int) (string, error) {
 		return "", err
 	}
 
-	destFile, err := CreateNextFile(destFilename, maxTries)
+	nextFilename, err := nextFilename(destFilename, maxTries)
 	if err != nil {
 		return "", err
 	}
-	if err := destFile.Close(); err != nil {
+
+	if err := copyFile(filename, nextFilename); err != nil {
 		return "", err
 	}
 
-	destFilename = destFile.Name()
-	if err := copyFile(filename, destFilename); err != nil {
+	return nextFilename, nil
+}
+
+func nextFilename(filename string, maxTries int) (string, error) {
+	nextFile, err := CreateNextFile(filename, maxTries)
+	if err != nil {
+		return "", err
+	}
+	if err := nextFile.Close(); err != nil {
 		return "", err
 	}
 
-	return destFilename, nil
+	return nextFile.Name(), nil
 }
 
 // CreateNextFile creates a file based on the given filename and returns it.
@@ -65,12 +81,12 @@ func CreateNextFile(filename string, maxTries int) (*os.File, error) {
 	dir, name := filepath.Split(filepath.Clean(filename))
 
 	for i := 0; i <= maxTries; i++ {
-		filename = filepath.Join(dir, insertCounter(name, i))
-		file, err := CreateFile(filename)
+		nextFilename := filepath.Join(dir, insertCounter(name, i))
+		nextFile, err := CreateFile(nextFilename)
 		if err != nil {
 			continue
 		}
-		return file, nil
+		return nextFile, nil
 	}
 
 	return nil, errors.New("exceeded maximum number of tries")
@@ -117,7 +133,22 @@ func CreateFile(filename string) (*os.File, error) {
 // MoveFile moves the file with the given filename to the given destination.
 // MoveFile overwrites existing destination files.
 func MoveFile(filename, destFilename string) error {
-	if err := CopyFile(filename, destFilename); err != nil {
+	if err := assertCopyable(filename, destFilename); err != nil {
+		return err
+	}
+
+	return moveFile(filename, destFilename)
+}
+
+func moveFile(filename, destFilename string) error {
+	// Try a simple rename operation.
+	moved := os.Rename(filename, destFilename) == nil
+	if moved {
+		return nil
+	}
+
+	// Otherwise, copy and remove.
+	if err := copyFile(filename, destFilename); err != nil {
 		return err
 	}
 	_ = RemoveFile(filename)
@@ -155,7 +186,7 @@ func assertCopyable(filename, destFilename string) error {
 
 	sameFile := destInfo != nil && os.SameFile(srcInfo, destInfo)
 	if sameFile {
-		return errors.New("cannot copy to the file itself")
+		return errors.New("source and destination are the same file")
 	}
 
 	return nil
