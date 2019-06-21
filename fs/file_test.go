@@ -290,6 +290,9 @@ func TestCreateNextFile(t *testing.T) {
 	file2, err := ioutil.TempFile(dir1, "file*")
 	assert.Nil(err)
 	file2.Close()
+	file3, err := ioutil.TempFile(dir1, "file*.json.txt")
+	assert.Nil(err)
+	file3.Close()
 	defer os.RemoveAll(dir1)
 
 	type args struct {
@@ -336,6 +339,24 @@ func TestCreateNextFile(t *testing.T) {
 				1,
 			},
 			file2.Name() + "(1)",
+			false,
+		},
+		{
+			"existing file with extension and other dot, zero tries",
+			args{
+				file3.Name(),
+				0,
+			},
+			"",
+			true,
+		},
+		{
+			"existing file with extension and other dot, one try",
+			args{
+				file3.Name(),
+				1,
+			},
+			strings.TrimSuffix(file3.Name(), ".txt") + "(1)" + ".txt",
 			false,
 		},
 	}

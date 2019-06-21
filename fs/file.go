@@ -93,7 +93,7 @@ func CreateNextFile(filename string, maxTries int) (*os.File, error) {
 }
 
 // insertCounter inserts a counter in the given filename with the given value.
-// The counter is inserted before the first dot, if any.
+// The counter is inserted before the last dot, if any.
 // For example, given filename "test.json" and a value of 3,
 // insertCounter returns "test(3).json".
 // If the value is less than 1, the original filename is returned.
@@ -102,7 +102,7 @@ func insertCounter(filename string, value int) string {
 		return filename
 	}
 
-	insertPos := strings.Index(filename, ".")
+	insertPos := strings.LastIndex(filename, ".")
 	if insertPos == -1 {
 		insertPos = len(filename)
 	}
