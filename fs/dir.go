@@ -41,7 +41,7 @@ func readDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 	maxFiles := options.MaxFiles
 	limitFiles := maxFiles > 0
 
-	fileInfos := []*FileInfo{}
+	fileInfos := make([]*FileInfo, 0, 1000)
 	_ = godirwalk.Walk(dirname, &godirwalk.Options{
 		Callback: func(osPathname string, de *godirwalk.Dirent) error {
 			skipDir := skipSubdirs && de.IsDir() && osPathname != dirname
