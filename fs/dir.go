@@ -101,10 +101,12 @@ func SubdirOf(dirname, targetname string) (bool, error) {
 	}
 
 	prevParent := filepath.Clean(dirname)
-	nextParent := filepath.Dir(prevParent)
 
 	for {
-		if nextParent == prevParent {
+		nextParent := filepath.Dir(prevParent)
+
+		rootReached := nextParent == prevParent
+		if rootReached {
 			return false, nil
 		}
 
@@ -114,7 +116,6 @@ func SubdirOf(dirname, targetname string) (bool, error) {
 		}
 
 		prevParent = nextParent
-		nextParent = filepath.Dir(nextParent)
 	}
 }
 
