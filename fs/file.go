@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -89,7 +88,7 @@ func CreateNextFile(filename string, maxTries int) (*os.File, error) {
 		return nextFile, nil
 	}
 
-	return nil, errors.New("exceeded maximum number of tries")
+	return nil, MaxTriesErr
 }
 
 // insertCounter inserts a counter in the given filename with the given value.
@@ -175,7 +174,7 @@ func assertCopyable(filename, destFilename string) error {
 	}
 
 	if strings.TrimSpace(destFilename) == "" {
-		return fmt.Errorf("destination name cannot be empty")
+		return DestFilenameEmptyErr
 	}
 
 	destInfo, _ := os.Stat(destFilename)
@@ -186,7 +185,7 @@ func assertCopyable(filename, destFilename string) error {
 
 	sameFile := destInfo != nil && os.SameFile(srcInfo, destInfo)
 	if sameFile {
-		return errors.New("source and destination are the same file")
+		return SourceDestSameFileErr
 	}
 
 	return nil

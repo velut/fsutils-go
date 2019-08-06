@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,7 +25,7 @@ type ReadDirOptions struct {
 // Eventual filesystem errors are ignored.
 func ReadDir(dirname string, options *ReadDirOptions) ([]*FileInfo, error) {
 	if options == nil {
-		return nil, errors.New("no options specified")
+		return nil, NoReadDirOptionsErr
 	}
 
 	if err := AssertDir(dirname); err != nil {
