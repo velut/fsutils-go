@@ -101,7 +101,7 @@ func SubdirOf(dirname, targetname string) (bool, error) {
 	}
 
 	prevParent := filepath.Clean(dirname)
-	nextParent := filepath.Dir(dirname)
+	nextParent := filepath.Dir(prevParent)
 
 	for {
 		if nextParent == prevParent {

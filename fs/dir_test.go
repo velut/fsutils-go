@@ -279,9 +279,27 @@ func TestSubdirOf(t *testing.T) {
 			false,
 		},
 		{
+			"dir1, followed by a separator, is not a subdir of itself",
+			args{
+				dir1 + string(filepath.Separator),
+				dir1,
+			},
+			false,
+			false,
+		},
+		{
 			"dir2 is not a subdir of itself",
 			args{
 				dir2,
+				dir2,
+			},
+			false,
+			false,
+		},
+		{
+			"dir2, followed by a separator, is not a subdir of itself",
+			args{
+				dir2 + string(filepath.Separator),
 				dir2,
 			},
 			false,
@@ -297,9 +315,27 @@ func TestSubdirOf(t *testing.T) {
 			false,
 		},
 		{
+			"dir1, followed by a separator, is not a subdir of dir2",
+			args{
+				dir1 + string(filepath.Separator),
+				dir2,
+			},
+			false,
+			false,
+		},
+		{
 			"dir2 is not a subdir of dir1",
 			args{
 				dir2,
+				dir1,
+			},
+			false,
+			false,
+		},
+		{
+			"dir2, followed by a separator, is not a subdir of dir1",
+			args{
+				dir2 + string(filepath.Separator),
 				dir1,
 			},
 			false,
@@ -315,9 +351,27 @@ func TestSubdirOf(t *testing.T) {
 			false,
 		},
 		{
+			"dir1, follwed by a separator, is a subdir of its direct parent",
+			args{
+				dir1 + string(filepath.Separator),
+				filepath.Dir(dir1),
+			},
+			true,
+			false,
+		},
+		{
 			"dir2 is a subdir of its direct parent",
 			args{
 				dir2,
+				filepath.Dir(dir2),
+			},
+			true,
+			false,
+		},
+		{
+			"dir2, follwed by a separator, is a subdir of its direct parent",
+			args{
+				dir2 + string(filepath.Separator),
 				filepath.Dir(dir2),
 			},
 			true,
@@ -333,9 +387,27 @@ func TestSubdirOf(t *testing.T) {
 			false,
 		},
 		{
+			"dir1, followed by a separator, is a subdir of its parent's parent",
+			args{
+				dir1 + string(filepath.Separator),
+				filepath.Dir(filepath.Dir(dir1)),
+			},
+			true,
+			false,
+		},
+		{
 			"dir2 is a subdir of its parent's parent",
 			args{
 				dir2,
+				filepath.Dir(filepath.Dir(dir2)),
+			},
+			true,
+			false,
+		},
+		{
+			"dir2, followed by a separator, is a subdir of its parent's parent",
+			args{
+				dir2 + string(filepath.Separator),
 				filepath.Dir(filepath.Dir(dir2)),
 			},
 			true,
@@ -351,9 +423,27 @@ func TestSubdirOf(t *testing.T) {
 			false,
 		},
 		{
+			"dir1, follwed by a separator, is a subdir of its root parent",
+			args{
+				dir1 + string(filepath.Separator),
+				rootParent(dir1),
+			},
+			true,
+			false,
+		},
+		{
 			"dir2 is a subdir of its root parent",
 			args{
 				dir2,
+				rootParent(dir2),
+			},
+			true,
+			false,
+		},
+		{
+			"dir2, follwed by a separator, is a subdir of its root parent",
+			args{
+				dir2 + string(filepath.Separator),
 				rootParent(dir2),
 			},
 			true,
