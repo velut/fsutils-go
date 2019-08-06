@@ -115,6 +115,8 @@ func insertCounter(filename string, value int) string {
 // If filename already exists, CreateFile returns an error.
 // CreateFile requires exclusive access to the given filename.
 func CreateFile(filename string) (*os.File, error) {
+	filename = filepath.Clean(filename)
+
 	// Exclusive access to filename,
 	// see https://golang.org/src/os/error_test.go
 	// and https://stackoverflow.com/a/22483001
@@ -126,6 +128,7 @@ func CreateFile(filename string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return file, nil
 }
 

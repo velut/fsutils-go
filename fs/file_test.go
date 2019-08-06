@@ -216,6 +216,14 @@ func TestCreateFile(t *testing.T) {
 			true,
 			false,
 		},
+		{
+			"empty filename",
+			args{
+				"",
+			},
+			false,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		got, gotErr := CreateFile(tt.args.filename)
